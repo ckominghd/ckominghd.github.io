@@ -36,14 +36,14 @@
                     log(`成功讀取！標籤 ID: ${serialNumber}`);
 
                     // 範例：從 NDEF 訊息中讀取第一個文字紀錄
-                    let payload = '';
-                    for (const record of message.records) {
-                        if (record.recordType === "text") {
-                            const textDecoder = new TextDecoder(record.encoding);
-                            payload = textDecoder.decode(record.data);
-                            log(`讀取內容: ${payload}`);
-                            break;
-                        }
+                    let payload = 'data123';
+                    //for (const record of message.records) {
+                    //    if (record.recordType === "text") {
+                    //        const textDecoder = new TextDecoder(record.encoding);
+                    //        payload = textDecoder.decode(record.data);
+                    //        log(`讀取內容: ${payload}`);
+                    //        break;
+                    //    }
                     }
 
                     // 準備要傳送給 Apps Script 的資料
