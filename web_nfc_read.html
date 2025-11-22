@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>Web NFC 試算表資料收集</title>
+</head>
+<body>
+    <h1>NFC 資料收集器</h1>
+    <button id="scanButton">點擊開始 NFC 掃描</button>
+    <p id="log">等待掃描...</p>
+
+    <script>
+        // 替換成您在 Apps Script 中部署的 Web 應用程式 URL
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyYkYnnYdvaUg_12MNgN3-MwtlEcCIakT2nA4lXgNE10ejuxcz7O568gQpSsh2i1Owr/exec'; 
+        const logElement = document.getElementById('log');
+
+        function log(message) {
+            logElement.textContent = message;
+        }
+
+        document.getElementById('scanButton').addEventListener('click', async () => {
+            log("掃描中...請將 NFC 標籤靠近設備。");
+
+            // 檢查瀏覽器是否支援 Web NFC API
+            if (!('NDEFReader' in window)) {
+                log("錯誤: 您的瀏覽器不支援 Web NFC API。請使用 Android 上的 Chrome (HTTPS)。");
+                return;
+            }
+
+            try {
+                const ndef = new NDEFReader();
+                await ndef.scan();
+                log("掃描已啟動。");
+
+                ndef.addEventListener("reading", async ({ message, serialNumber }) => {
+                    log(`成功讀取！標籤 ID: ${serialNumber}`);
+
+                    // 範例：從 NDEF 訊息中讀取第一個文字紀錄
+                    let payload = '';
+                    for (const record of message.records) {
+                        if (record.recordType === "text") {
+                            const textDecoder = new TextDecoder(record.encoding);
+                            payload = textDecoder.decode(record.data);
+                            log(`讀取內容: ${payload}`);
+                            break;
+                        }
+                    }
+
+                    // 準備要傳送給 Apps Script 的資料
+                    const dataToSend = {
+                        nfcSerialNumber: serialNumber,
+                        nfcPayload: payload,
+                        // 您可以添加任何需要的額外資料
+                    };
+
+                    // 將資料 POST 到 Apps Script
+                    const response = await fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(dataToSend),
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        log(`✅ 數據傳輸成功！ Apps Script 回應: ${result.message}`);
+                    } else {
+                        log(`❌ 數據傳輸失敗: ${result.message}`);
+                    }
+
+                }, { once: true }); // 設置 { once: true } 確保只讀取一次
+
+            } catch (error) {
+                log(`錯誤: Web NFC 掃描失敗。 ${error}`);
+            }
+        });
+    </script>
+</body>
+</html>
